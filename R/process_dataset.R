@@ -1,6 +1,14 @@
 read_dbc <- function(filepath) {
   print(paste("Reading", filepath))
-  read.dbc::read.dbc(filepath, as.is = TRUE)
+  read.dbc::read.dbc(filepath, as.is = TRUE) |>
+    # Remove non-ASCII characters by converting to ASCII to avoid issues with parquet
+    # This is a workaround for issues with non-ASCII characters in parquet files
+    dplyr::mutate(
+      dplyr::across(
+        dplyr::everything(),
+        function(x) iconv(x, "latin1", "ASCII", sub = "")
+      )
+    )
 }
 
 write_parquet <- function(data, filepath) {
