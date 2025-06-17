@@ -43,24 +43,32 @@ process_dataset <- function(diretorio, dest_dir) {
   for (date_dir in fs::dir_ls(diretorio)) {
     date <- fs::path_file(date_dir)
     output_dir <- fs::path(dest_dir, dataset)
+
+    # List all DBC files in the date directory
     dbc_files <- fs::dir_ls(date_dir, glob = "*.dbc")
+
+    # Get the latest modification date from this date directory
     latest_modification <- dbc_files |>
       purrr::map_dfr(parse_filename) |>
       dplyr::pull("modification") |>
       max()
 
+    # Construct the output file path
+    # Format: <dataset>_<date>_<latest_modification>.parquet
     output_file <- fs::path(
       output_dir,
       paste0(dataset, "_", date, "_", latest_modification, ".parquet")
     )
+    # Check if the output file already exists
     if (fs::file_exists(output_file)) {
       print(paste("File", output_file, "already exists. Skipping..."))
       next
     }
 
     print(paste("Processing", date))
+    # Create the output directory
     fs::dir_create(output_dir)
-    # Read all DBC files in the directory
+    # Read all DBC files in the date directory and write to a single Parquet file
     tryCatch(
       {
         dbc_files |>
